@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>杨派岩画生成</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <a class="brand" href="/">
+        <span class="brand-mark">岩</span>
+        <span>
+          <strong>杨派岩画生成</strong>
+          <small>生成样例 · 艺术生成</small>
+        </span>
+      </a>
+      <nav class="nav">
+        <a class="active" href="/">首页</a>
+        <a href="/samples.html">生成样例</a>
+        <a href="#history">作品库</a>
+        <a href="#help">帮助</a>
+      </nav>
+      <button class="icon-btn" aria-label="用户中心">⌾</button>
+    </header>
+
+    <main>
+      <section class="hero">
+        <div class="hero-copy">
+          <h1>杨派岩画生成</h1>
+          <p>仅在给定图册范围内生成，支持文本生成图画与后续工作流扩展。</p>
+          <div class="features">
+            <span>生成样例</span>
+            <span>艺术风格</span>
+            <span>一键生成</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <img id="hero-image" src="/assets/frontend.png" alt="" />
+        </div>
+      </section>
+
+      <section class="workspace" aria-label="生成工作台">
+        <form class="panel controls" id="generate-form">
+          <div class="panel-title">
+            <span>生成控制面板</span>
+            <small class="health" id="health"><i aria-hidden="true"></i><b>检查服务中</b></small>
+          </div>
+
+          <div class="tabs" role="tablist" aria-label="生成模式">
+            <button class="tab active" type="button" data-mode="text">文本生成图画</button>
+            <button class="tab" type="button" data-mode="direct">直接生成图画</button>
+          </div>
+
+          <label class="field" id="prompt-field">
+            <span>画面描述</span>
+            <textarea id="prompt" maxlength="500" placeholder="请输入画面描述，例如：敦煌飞天、奔马、岩画肌理、暖色调">一只可爱的布偶猫趴在一匹威风凛凛的马的背上</textarea>
+            <em><span id="count">0</span>/500</em>
+          </label>
+
+          <fieldset id="subject-field" class="direct-setting hidden">
+            <legend>题材选择</legend>
+            <div class="chips" data-group="subject">
+              <button class="chip active" type="button" data-value="人物">人物</button>
+              <button class="chip" type="button" data-value="动物">动物</button>
+              <button class="chip" type="button" data-value="花卉">花卉</button>
+              <button class="chip" type="button" data-value="山水">山水</button>
+              <button class="chip" type="button" data-value="其他">其他</button>
+            </div>
+          </fieldset>
+
+          <details class="advanced" open>
+            <summary>高级设置</summary>
+            <div class="settings-grid">
+              <label>宽度<input id="width" type="number" min="512" max="2048" step="64" value="1024" /></label>
+              <label>高度<input id="height" type="number" min="512" max="2048" step="64" value="1024" /></label>
+              <label>步数<input id="steps" type="number" min="1" max="50" value="40" /></label>
+              <label>种子<input id="seed" type="number" placeholder="随机" /></label>
+            </div>
+          </details>
+
+          <div class="actions">
+            <button class="primary" id="submit" type="submit">生成图画</button>
+            <button class="secondary" id="random-seed" type="button" aria-label="随机种子">⚙</button>
+          </div>
+        </form>
+
+        <section class="panel results" aria-label="生成结果">
+          <div class="result-header">
+            <h2>生成结果</h2>
+            <a class="download disabled" id="download" href="#" download>下载高清图</a>
+          </div>
+
+          <div class="result-frame" id="result-frame">
+            <img class="hidden" id="result-image" alt="生成结果预览" />
+            <div class="empty-preview" id="empty-preview">
+              <strong>等待生成</strong>
+              <span>输入描述或选择直接生成后，结果会显示在这里</span>
+            </div>
+            <div class="progress-overlay hidden" id="progress-overlay" aria-live="polite">
+              <div class="progress-ring" id="progress-ring" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <span id="progress-percent">0%</span>
+              </div>
+              <strong id="progress-title">生成中</strong>
+              <span id="progress-detail">正在提交到 ComfyUI</span>
+            </div>
+            <div class="status" id="status">等待输入画面描述</div>
+          </div>
+
+          <div class="thumbs" id="thumbs"></div>
+        </section>
+      </section>
+
+      <section class="history panel" id="history">
+        <div class="history-title">
+          <h2>最近生成 / 历史作品</h2>
+          <button type="button" id="clear-history">查看全部</button>
+        </div>
+        <div class="history-list" id="history-list"></div>
+      </section>
+    </main>
+
+    <footer id="help">
+      <span>ComfyUI: <code id="comfy-url">127.0.0.1:10100</code></span>
+      <span>端口: <code>10101</code></span>
+    </footer>
+
+    <script src="/app.js"></script>
+  </body>
+</html>
