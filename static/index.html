@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>杨派岩画生成</title>
-    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="/styles.css?v=20260706-particles-bright" />
   </head>
   <body>
     <header class="topbar">
@@ -28,7 +28,6 @@
       <section class="hero">
         <div class="hero-copy">
           <h1>杨派岩画生成</h1>
-          <p>仅在给定图册范围内生成，支持文本生成图画与后续工作流扩展。</p>
           <div class="features">
             <span>生成样例</span>
             <span>艺术风格</span>
@@ -37,6 +36,7 @@
         </div>
         <div class="hero-art" aria-hidden="true">
           <img id="hero-image" src="/assets/frontend.png" alt="" />
+          <canvas id="hero-particles" class="hero-particles"></canvas>
         </div>
       </section>
 
@@ -48,8 +48,8 @@
           </div>
 
           <div class="tabs" role="tablist" aria-label="生成模式">
-            <button class="tab active" type="button" data-mode="text">文本生成图画</button>
-            <button class="tab" type="button" data-mode="direct">直接生成图画</button>
+            <button class="tab" type="button" data-mode="text">文本生成图画</button>
+            <button class="tab active" type="button" data-mode="direct">直接生成图画</button>
           </div>
 
           <label class="field" id="prompt-field">
@@ -58,7 +58,7 @@
             <em><span id="count">0</span>/500</em>
           </label>
 
-          <fieldset id="subject-field" class="direct-setting hidden">
+          <fieldset id="subject-field" class="direct-setting">
             <legend>题材选择</legend>
             <div class="chips" data-group="subject">
               <button class="chip active" type="button" data-value="人物">人物</button>
@@ -74,7 +74,7 @@
             <div class="settings-grid">
               <label>宽度<input id="width" type="number" min="512" max="2048" step="64" value="1024" /></label>
               <label>高度<input id="height" type="number" min="512" max="2048" step="64" value="1024" /></label>
-              <label>步数<input id="steps" type="number" min="1" max="50" value="40" /></label>
+              <label>步数<input id="steps" type="number" min="1" max="50" value="8" /></label>
               <label>种子<input id="seed" type="number" placeholder="随机" /></label>
             </div>
           </details>
@@ -121,10 +121,9 @@
     </main>
 
     <footer id="help">
-      <span>ComfyUI: <code id="comfy-url">127.0.0.1:10100</code></span>
-      <span>端口: <code>10101</code></span>
+      <span>版本号：<code>v2.1</code></span>
     </footer>
 
-    <script src="/app.js"></script>
+    <script src="/app.js?v=20260706-particles-bright"></script>
   </body>
 </html>

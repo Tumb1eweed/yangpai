@@ -48,7 +48,7 @@ PERSON_TEXT_GENERATE_PROMPT = """/no_think
 5. 画面中不要出现文字、水印、签名。
 6. 人物设定、场景、视角、构图、风格请随机变化。
 7. 风格可以随机为：写实、插画、奇幻、古风、国潮、电影感、赛博朋克、岩画风、壁画风等。
-8. 最后加入触发词：yp_art。
+8. 最后加入触发词：yp_rock_art, 基于南派技法的杨派岩画, 墙面壁画感, 斑驳墙面质感, 特制宣纸质感, 矿物颜料颗粒感, 手工压绘纹理;
 
 只输出最终提示词。"""
 ANIMAL_TEXT_GENERATE_PROMPT = """/no_think
@@ -65,7 +65,7 @@ ANIMAL_TEXT_GENERATE_PROMPT = """/no_think
 5. 画面中不要出现文字、水印、签名。
 6. 动物种类、场景、视角、构图、风格请随机变化。
 7. 风格可以随机为：写实、插画、奇幻、古风、电影感、国潮、岩画风、壁画风等。
-8. 最后加入触发词：yp_art。
+8. 最后加入触发词：yp_rock_art, 基于南派技法的杨派岩画, 墙面壁画感, 斑驳墙面质感, 特制宣纸质感, 矿物颜料颗粒感, 手工压绘纹理;
 
 只输出最终提示词。"""
 FLOWER_TEXT_GENERATE_PROMPT = """/no_think
@@ -82,7 +82,7 @@ FLOWER_TEXT_GENERATE_PROMPT = """/no_think
 5. 画面中不要出现文字、水印、签名。
 6. 花卉种类、背景、视角、构图、风格请随机变化。
 7. 风格可以随机为：写实、插画、装饰画、工笔感、国风、电影感、岩画风、壁画风、水墨风等。
-8. 最后加入触发词：yp_art。
+8. 最后加入触发词：yp_rock_art, 基于南派技法的杨派岩画, 墙面壁画感, 斑驳墙面质感, 特制宣纸质感, 矿物颜料颗粒感, 手工压绘纹理;
 
 只输出最终提示词。"""
 LANDSCAPE_TEXT_GENERATE_PROMPT = """/no_think
@@ -99,7 +99,7 @@ LANDSCAPE_TEXT_GENERATE_PROMPT = """/no_think
 5. 画面中不要出现文字、水印、签名。
 6. 山水类型、季节、天气、视角、构图、风格请随机变化。
 7. 风格可以随机为：写实风景、国风山水、插画风、电影感、壁画风、岩画风、水墨风、装饰画风等。
-8. 最后加入触发词：yp_art。
+8. 最后加入触发词：yp_rock_art, 基于南派技法的杨派岩画, 墙面壁画感, 斑驳墙面质感, 特制宣纸质感, 矿物颜料颗粒感, 手工压绘纹理;
 
 只输出最终提示词。"""
 OTHER_TEXT_GENERATE_PROMPT = """/no_think
@@ -118,7 +118,7 @@ OTHER_TEXT_GENERATE_PROMPT = """/no_think
 5. 画面中不要出现文字、水印、签名。
 6. 主题、场景、视角、构图、风格请随机变化。
 7. 风格可以随机为：写实、插画、古风、电影感、国潮、岩画风、壁画风、装饰画风、奇幻风等。
-8. 最后加入触发词：yp_art。
+8. 最后加入触发词：yp_rock_art, 基于南派技法的杨派岩画, 墙面壁画感, 斑驳墙面质感, 特制宣纸质感, 矿物颜料颗粒感, 手工压绘纹理;
 
 只输出最终提示词。"""
 SUBJECT_PROMPTS = {
@@ -360,7 +360,7 @@ def prepare_prompt(data):
     save_node_id = find_node_id(prompt, "SaveImage")
     width = clamp_int(data.get("width"), 1024, 512, 2048)
     height = clamp_int(data.get("height"), 1024, 512, 2048)
-    steps = clamp_int(data.get("steps"), 40, 1, 50)
+    steps = clamp_int(data.get("steps"), 8, 1, 50)
     seed_value = data.get("seed")
     seed = random.randint(1, 2**48 - 1) if seed_value in (None, "", "random") else clamp_int(seed_value, 1, 1, 2**63 - 1)
     text_generate_seed = None

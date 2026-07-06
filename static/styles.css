@@ -190,9 +190,36 @@ h1 {
   height: 100%;
   object-fit: cover;
   object-position: 66% 24%;
-  filter: saturate(1.08) contrast(1.04);
+  filter: saturate(1.14) contrast(1.04) brightness(1.08);
+  opacity: 0.56;
   mix-blend-mode: multiply;
   mask-image: linear-gradient(90deg, transparent 0, #000 18%, #000 100%);
+  transition: opacity 360ms ease;
+}
+
+.hero-art.is-particle-ready img {
+  opacity: 0.5;
+}
+
+.hero-art.is-particle-ready:hover img {
+  opacity: 0.36;
+}
+
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  mix-blend-mode: normal;
+  opacity: 0.68;
+  mask-image: linear-gradient(90deg, transparent 0, #000 12%, #000 100%);
+  transition: opacity 180ms ease;
+}
+
+.hero-art.is-particle-ready:hover .hero-particles {
+  opacity: 0.82;
 }
 
 .workspace {
@@ -306,6 +333,10 @@ h1 {
 }
 
 .hidden {
+  display: none !important;
+}
+
+.feature-hidden {
   display: none !important;
 }
 
@@ -830,5 +861,15 @@ footer {
 
   textarea {
     height: 260px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-art img {
+    opacity: 0.72;
+  }
+
+  .hero-particles {
+    display: none;
   }
 }

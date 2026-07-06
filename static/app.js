@@ -1,10 +1,11 @@
 const state = {
   subject: "人物",
-  mode: "text",
+  mode: "direct",
   history: [],
   polling: null,
   progressTimer: null,
   progress: 0,
+  heroParticleCleanup: null,
 };
 
 const form = document.querySelector("#generate-form");
@@ -20,8 +21,8 @@ const download = document.querySelector("#download");
 const thumbs = document.querySelector("#thumbs");
 const historyList = document.querySelector("#history-list");
 const health = document.querySelector("#health");
-const comfyUrl = document.querySelector("#comfy-url");
 const heroImage = document.querySelector("#hero-image");
+const heroParticles = document.querySelector("#hero-particles");
 const referenceGrid = document.querySelector("#reference-grid");
 const progressOverlay = document.querySelector("#progress-overlay");
 const progressRing = document.querySelector("#progress-ring");
@@ -143,6 +144,221 @@ function escapeHtml(value) {
     .replaceAll('"', "&quot;");
 }
 
+function initHeroParticles() {
+  const host = heroImage?.closest(".hero-art");
+  if (!host || !heroImage || !heroParticles) return;
+  if (state.heroParticleCleanup) state.heroParticleCleanup();
+
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const ctx = heroParticles.getContext("2d", { willReadFrequently: true });
+  if (!ctx || reduceMotion) {
+    host.classList.remove("is-particle-ready");
+    return;
+  }
+
+  const alphaThreshold = 95;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const mouse = { x: -9999, y: -9999, on: false };
+  const particles = [];
+  const hoverState = { active: false };
+  let width = 0;
+  let height = 0;
+  let raf = 0;
+  let resizeTimer = 0;
+  let startedAt = performance.now();
+
+  const isBackground = (r, g, b, a) => {
+    if (a < alphaThreshold) return true;
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    return (max + min) / 2 > 232 && max - min < 24;
+  };
+
+  const colorFor = (r, g, b) => {
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    const light = (max + min) / 2;
+    const warmth = r - b;
+    if (warmth > 28 && r > 78) {
+      const f = Math.max(0.82, Math.min(1.24, light / 126));
+      return [Math.min(255, 205 * f) | 0, Math.min(255, 68 * f) | 0, Math.min(255, 38 * f) | 0];
+    }
+    const f = Math.max(0.76, Math.min(1.22, light / 82));
+    return [(88 * f) | 0, (55 * f) | 0, (35 * f) | 0];
+  };
+
+  const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+  function measure() {
+    const rect = host.getBoundingClientRect();
+    width = Math.max(1, rect.width);
+    height = Math.max(1, rect.height);
+    heroParticles.width = Math.round(width * dpr);
+    heroParticles.height = Math.round(height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function sampleImage() {
+    particles.length = 0;
+    const naturalWidth = heroImage.naturalWidth;
+    const naturalHeight = heroImage.naturalHeight;
+    if (!naturalWidth || !naturalHeight) return;
+
+    const sampleWidth = Math.min(window.innerWidth < 760 ? 280 : 420, naturalWidth);
+    const sampleHeight = Math.max(1, Math.round(sampleWidth * height / width));
+    const scale = Math.max(width / naturalWidth, height / naturalHeight);
+    const sourceWidth = Math.min(naturalWidth, width / scale);
+    const sourceHeight = Math.min(naturalHeight, height / scale);
+    const positionX = 0.66;
+    const positionY = 0.24;
+    const sourceX = Math.max(0, Math.min(naturalWidth - sourceWidth, (naturalWidth - sourceWidth) * positionX));
+    const sourceY = Math.max(0, Math.min(naturalHeight - sourceHeight, (naturalHeight - sourceHeight) * positionY));
+
+    const offscreen = document.createElement("canvas");
+    offscreen.width = sampleWidth;
+    offscreen.height = sampleHeight;
+    const offCtx = offscreen.getContext("2d", { willReadFrequently: true });
+    offCtx.drawImage(heroImage, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, sampleWidth, sampleHeight);
+
+    const imageData = offCtx.getImageData(0, 0, sampleWidth, sampleHeight).data;
+    let subjectPixels = 0;
+    for (let i = 0; i < imageData.length; i += 4) {
+      if (!isBackground(imageData[i], imageData[i + 1], imageData[i + 2], imageData[i + 3])) subjectPixels += 1;
+    }
+
+    const target = window.innerWidth < 760 ? 6200 : 16000;
+    const step = Math.max(2, Math.round(Math.sqrt(Math.max(1, subjectPixels) / target)));
+    for (let y = 0; y < sampleHeight; y += step) {
+      for (let x = 0; x < sampleWidth; x += step) {
+        const index = (y * sampleWidth + x) * 4;
+        if (isBackground(imageData[index], imageData[index + 1], imageData[index + 2], imageData[index + 3])) continue;
+        const color = colorFor(imageData[index], imageData[index + 1], imageData[index + 2]);
+        const nx = x / sampleWidth;
+        const ny = y / sampleHeight;
+        const tx = nx * width;
+        const ty = ny * height;
+        particles.push({
+          tx,
+          ty,
+          sx: -width * (0.18 + Math.random() * 0.64),
+          sy: ty + (Math.random() - 0.5) * height * 0.72,
+          r: color[0],
+          g: color[1],
+          b: color[2],
+          size: 0.86 + Math.random() * 1.28,
+          delay: nx * 520 + Math.random() * 240,
+          duration: 760 + Math.random() * 520,
+          phase: Math.random() * Math.PI * 2,
+          drift: Math.max(0, (0.16 - nx) / 0.16),
+          life: Math.random(),
+        });
+      }
+    }
+  }
+
+  function draw(now) {
+    const elapsed = now - startedAt;
+    const settled = elapsed > 1680;
+    ctx.clearRect(0, 0, width, height);
+    const time = now * 0.001;
+
+    for (const particle of particles) {
+      let x;
+      let y;
+      let alpha;
+      let hoverBoost = hoverState.active ? 0.08 : 0;
+      if (!settled) {
+        const local = (elapsed - particle.delay) / particle.duration;
+        const progress = local <= 0 ? 0 : local >= 1 ? 1 : easeOut(local);
+        x = particle.sx + (particle.tx - particle.sx) * progress;
+        y = particle.sy + (particle.ty - particle.sy) * progress;
+        alpha = Math.max(0, Math.min(1, local + 0.12));
+      } else {
+        particle.life = (particle.life + 0.0055) % 1;
+        x = particle.tx - 10 * particle.drift * particle.life + Math.sin(time + particle.phase) * 0.45;
+        y = particle.ty + Math.cos(time * 0.78 + particle.phase) * 0.55;
+        alpha = 1;
+        if (mouse.on) {
+          const dx = x - mouse.x;
+          const dy = y - mouse.y;
+          const distanceSquared = dx * dx + dy * dy;
+          const radius = Math.max(130, Math.min(220, width * 0.24));
+          if (distanceSquared < radius * radius) {
+            const distance = Math.sqrt(distanceSquared) || 1;
+            const hover = 1 - distance / radius;
+            const force = hover * 48;
+            hoverBoost = hover;
+            x += (dx / distance) * force + Math.sin(time * 8 + particle.phase) * hover * 5;
+            y += (dy / distance) * force + Math.cos(time * 7 + particle.phase) * hover * 5;
+          }
+        }
+      }
+      if (alpha <= 0.01) continue;
+      const drawSize = particle.size * (1 + hoverBoost * 0.9);
+      ctx.fillStyle = `rgb(${particle.r},${particle.g},${particle.b})`;
+      ctx.globalAlpha = alpha * (hoverState.active ? 0.16 : 0.1);
+      ctx.fillRect(x - 0.32, y - 0.32, drawSize + 0.64, drawSize + 0.64);
+      ctx.globalAlpha = alpha * (hoverState.active ? 0.72 : 0.62);
+      ctx.fillRect(x, y, drawSize, drawSize);
+    }
+    ctx.globalAlpha = 1;
+    raf = requestAnimationFrame(draw);
+  }
+
+  function rebuild() {
+    cancelAnimationFrame(raf);
+    measure();
+    sampleImage();
+    startedAt = performance.now();
+    host.classList.toggle("is-particle-ready", particles.length > 0);
+    raf = requestAnimationFrame(draw);
+  }
+
+  function onResize() {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(rebuild, 160);
+  }
+
+  function onPointerMove(event) {
+    const rect = heroParticles.getBoundingClientRect();
+    mouse.x = event.clientX - rect.left;
+    mouse.y = event.clientY - rect.top;
+    mouse.on = mouse.x >= 0 && mouse.x <= width && mouse.y >= 0 && mouse.y <= height;
+    hoverState.active = mouse.on;
+  }
+
+  function onPointerLeave() {
+    mouse.on = false;
+    hoverState.active = false;
+  }
+
+  window.addEventListener("resize", onResize);
+  host.addEventListener("pointermove", onPointerMove);
+  host.addEventListener("pointerleave", onPointerLeave);
+
+  state.heroParticleCleanup = () => {
+    cancelAnimationFrame(raf);
+    clearTimeout(resizeTimer);
+    window.removeEventListener("resize", onResize);
+    host.removeEventListener("pointermove", onPointerMove);
+    host.removeEventListener("pointerleave", onPointerLeave);
+    ctx.clearRect(0, 0, width, height);
+    host.classList.remove("is-particle-ready");
+    state.heroParticleCleanup = null;
+  };
+
+  rebuild();
+}
+
+function scheduleHeroParticles() {
+  if (!heroImage) return;
+  if (heroImage.complete && heroImage.naturalWidth) {
+    initHeroParticles();
+    return;
+  }
+  heroImage.addEventListener("load", initHeroParticles, { once: true });
+}
+
 async function checkHealth() {
   try {
     const response = await fetch("/api/health");
@@ -150,7 +366,7 @@ async function checkHealth() {
     health.classList.toggle("ok", Boolean(data.ok));
     health.classList.toggle("error", !data.ok);
     health.querySelector("b").textContent = data.ok ? "本地服务正常" : "服务异常";
-    comfyUrl.textContent = data.comfyui_url.replace(/^https?:\/\//, "");
+    document.querySelector("#comfy-url")?.replaceChildren(data.comfyui_url.replace(/^https?:\/\//, ""));
   } catch {
     health.classList.remove("ok");
     health.classList.add("error");
@@ -164,6 +380,7 @@ async function loadReferences() {
     const data = await response.json();
     if (data.hero) {
       heroImage.src = data.hero.url;
+      scheduleHeroParticles();
     }
     if (referenceGrid) renderReferences(data.references || []);
   } catch {
@@ -302,3 +519,4 @@ count.textContent = promptInput.value.length;
 updateModeView();
 checkHealth();
 loadReferences();
+scheduleHeroParticles();
